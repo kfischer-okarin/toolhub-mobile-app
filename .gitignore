@@ -20,6 +20,8 @@ VERSION.txt
 
 mygame/app/repl.rb
 
+android
+
 # Others
 .DS_Store
 vendor
