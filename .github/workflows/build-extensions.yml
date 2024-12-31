@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BUILD_TOOLS_VERSION: '30.0.0'
     steps:
       - uses: actions/checkout@v4
       - uses: kfischer-okarin/download-dragonruby@v1
@@ -19,6 +21,16 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21.0.5'
-      # TODO: Cache $ANDROID_HOME/build-tools/30.0.0
+      - name: Set build-tools variables
+        run: |
+          echo "BUILD_TOOLS_HOME=${ANDROID_HOME}/build-tools/${BUILD_TOOLS_VERSION}" >> $GITHUB_ENV
+      - name: Cache Android Build Tools
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_TOOLS_HOME }}
+          key: ${{ runner.os }}-build-tools-${{ env.BUILD_TOOLS_VERSION }}
       - name: Install Android Build Tools
-        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;30.0.0"
+        run: |
+          if [ ! -d $BUILD_TOOLS_HOME ]; then
+            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+          fi
