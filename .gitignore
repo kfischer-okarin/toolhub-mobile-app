@@ -1,0 +1,26 @@
+# Engine files
+.dragonruby
+builds
+docs
+include
+samples
+CHANGELOG*
+console-logo.png
+ctags*
+dragonruby*
+eula.txt
+ffmpeg
+font.ttf
+logs
+mygame-template
+open-source-licenses.txt
+README.txt
+tmp
+VERSION.txt
+
+mygame/app/repl.rb
+
+# Others
+.DS_Store
+vendor
+Gemfile.lock

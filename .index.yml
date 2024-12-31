@@ -1,0 +1,3 @@
+# Exclude files based on a given pattern. Often used to exclude test files or fixtures
+excluded_patterns:
+  - "**/tmp/**/*.rb"
