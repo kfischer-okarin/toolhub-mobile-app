@@ -1,0 +1,21 @@
+name: Build Extensions
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kfischer-okarin/download-dragonruby@v1
+        with:
+          version: '6.14'
+          license_tier: pro
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '21.0.5'
