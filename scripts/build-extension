@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+
+determine_ndk_platform() {
+  if [ $(uname) = "Darwin" ]; then
+    echo "darwin-x86_64"
+  elif [ $(uname) = "Linux" ]; then
+    echo "linux-x86_64"
+  else
+    echo "unknown"
+    exit 1
+  fi
+}
+
+output_path="./mygame/native/googleplay-arm64"
+mkdir -p $output_path
+
+ndk_llvm_path="./android/ndk/26.3.11579264/toolchains/llvm/prebuilt/$(determine_ndk_platform)"
+clang=$ndk_llvm_path/bin/aarch64-linux-android33-clang
+
+$clang --sysroot=$ndk_llvm_path/sysroot \
+       -shared \
+       -Wl,-undefined -Wl,dynamic_lookup \
+       -fPIC \
+       -I ./include \
+       ./app-native/ext.c \
+       -o $output_path/ext.so
