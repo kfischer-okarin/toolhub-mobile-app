@@ -42,7 +42,7 @@ jobs:
           fi
       - name: Build Extension
         run: |
-          output_path=native/googleplay-arm64
+          output_path=dist/native/googleplay-arm64
           mkdir -p $output_path
           $NDK_CLANG --sysroot=$NDK_SYSROOT \
                      -shared \
@@ -51,3 +51,7 @@ jobs:
                      -I ./include \
                      ./app-native/ext.c \
                      -o $output_path/ext.so
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ext
+          path: dist/
