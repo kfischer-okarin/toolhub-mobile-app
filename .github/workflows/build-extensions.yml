@@ -19,3 +19,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21.0.5'
+      # TODO: Cache $ANDROID_HOME/build-tools/30.0.0
+      - name: Install Android Build Tools
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;30.0.0"
