@@ -9,10 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      BUILD_TOOLS_VERSION: '30.0.0'
-      NDK_VERSION: '26.3.11579264'
-      NDK_CLANG_BINARY: aarch64-linux-android33-clang
     steps:
       - uses: actions/checkout@v4
       - uses: kfischer-okarin/download-dragonruby@v1
@@ -23,34 +19,21 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21.0.5'
-      - name: Set variables
-        run: |
-          echo "BUILD_TOOLS_HOME=${ANDROID_HOME}/build-tools/${BUILD_TOOLS_VERSION}" >> $GITHUB_ENV
-
-          NDK_LLVM_PATH=ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64
-          echo "NDK_CLANG=${ANDROID_HOME}/$NDK_LLVM_PATH/bin/$NDK_CLANG_BINARY" >> $GITHUB_ENV
-          echo "NDK_SYSROOT=${ANDROID_HOME}/$NDK_LLVM_PATH/sysroot" >> $GITHUB_ENV
-      - name: Cache Android Build Tools
+      - name: Cache Android Build Environment
         uses: actions/cache@v4
         with:
-          path: ${{ env.BUILD_TOOLS_HOME }}
-          key: ${{ runner.os }}-build-tools-${{ env.BUILD_TOOLS_VERSION }}
-      - name: Install Android Build Tools
+          path: ./android
+          key: ${{ runner.os }}-build-tools-${{ hashFiles('scripts/setup-build-environment') }}
+      - name: Install Android Build Environment
         run: |
-          if [ ! -d $BUILD_TOOLS_HOME ]; then
-            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+          if [ ! -d android ]; then
+            ./scripts/setup-build-environment $ANDROID_HOME/cmdline-tools
           fi
       - name: Build Extension
         run: |
-          output_path=dist/native/googleplay-arm64
-          mkdir -p $output_path
-          $NDK_CLANG --sysroot=$NDK_SYSROOT \
-                     -shared \
-                     -Wl,-undefined -Wl,dynamic_lookup \
-                     -fPIC \
-                     -I ./include \
-                     ./app-native/ext.c \
-                     -o $output_path/ext.so
+          ./scripts/build-extension
+          mkdir -p dist
+          mv mygame/native dist/
       - uses: actions/upload-artifact@v4
         with:
           name: ext
