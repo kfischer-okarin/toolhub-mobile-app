@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+cd $(dirname $0)/..
+
+metadata_key=$1
+
+metadata_line=$(grep "^$metadata_key=" mygame/metadata/game_metadata.txt || true)
+
+if [ -z "$metadata_line" ]; then
+  echo "Metadata key '$metadata_key' not found"
+  exit 1
+fi
+
+echo $metadata_line | cut -d = -f 2
