@@ -5,4 +5,4 @@ gameid=kfokarin_toolhub_mobile_app
 gametitle=My Toolhub
 version=0.1
 icon=metadata/icon.png
-packageid=dev.kf-labo.toolhub
+packageid=dev.kf_labo.toolhub
