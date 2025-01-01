@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+
+GAMEID=kfokarin_toolhub_mobile_app
+PACKAGEID=dev.kf_labo.toolhub
+
+cd $(dirname $0)/..
+
+./dragonruby-publish --package --platforms=googleplay
+java -jar ./android/bundletool.jar build-apks \
+     --bundle=./builds/$GAMEID-googleplay.aab \
+     --output=./builds/app.apks \
+     --mode=universal
+
+mv ./builds/app.apks ./builds/app.zip
+rm -rf ./builds/tmp
+mkdir ./builds/tmp
+unzip ./builds/app.zip -d ./builds/tmp
+
+apksigner=./android/build-tools/30.0.0/apksigner
+$apksigner sign --ks ./android/dev_keystore.jks --min-sdk-version 26 --ks-pass pass:mygame ./builds/tmp/universal.apk
+
+adb=./android/platform-tools/adb
+$adb shell am force-stop $PACKAGEID
+$adb uninstall $PACKAGEID || true # In case the app was never installed
+$adb install ./builds/tmp/universal.apk
+$adb shell am start -n $PACKAGEID/$PACKAGEID.DragonRubyActivity
