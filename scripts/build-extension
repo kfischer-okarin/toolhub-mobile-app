@@ -2,6 +2,8 @@
 
 set -e
 
+cd $(dirname $0)/..
+
 determine_ndk_platform() {
   if [ $(uname) = "Darwin" ]; then
     echo "darwin-x86_64"

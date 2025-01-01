@@ -2,6 +2,8 @@
 
 set -e
 
+cd $(dirname $0)/..
+
 path_to_cmdline_tools=$1
 
 if [ -z "$path_to_cmdline_tools" ]; then
