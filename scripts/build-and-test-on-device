@@ -2,10 +2,10 @@
 
 set -e
 
-GAMEID=kfokarin_toolhub_mobile_app
-PACKAGEID=dev.kf_labo.toolhub
-
 cd $(dirname $0)/..
+
+GAMEID=$(./scripts/get-metadata gameid)
+PACKAGEID=$(./scripts/get-metadata packageid)
 
 ./dragonruby-publish --package --platforms=googleplay
 java -jar ./android/bundletool.jar build-apks \
