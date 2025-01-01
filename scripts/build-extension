@@ -4,6 +4,13 @@ set -e
 
 cd $(dirname $0)/..
 
+extension=$1
+
+if [ -z $extension ]; then
+  echo "Usage: $0 <extension>" >&2
+  exit 1
+fi
+
 determine_ndk_platform() {
   if [ $(uname) = "Darwin" ]; then
     echo "darwin-x86_64"
@@ -26,5 +33,5 @@ $clang --sysroot=$ndk_llvm_path/sysroot \
        -Wl,-undefined -Wl,dynamic_lookup \
        -fPIC \
        -I ./include \
-       ./app-native/ext.c \
-       -o $output_path/ext.so
+       ./app-native/$extension.c \
+       -o $output_path/$extension.so
