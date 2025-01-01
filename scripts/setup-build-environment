@@ -25,6 +25,15 @@ sdkmanager="./android/cmdline-tools/latest/bin/sdkmanager"
 log "Accepting licenses"
 yes | $sdkmanager --sdk_root=android --licenses > /dev/null
 
+# Handling APKs and testing
+log "Installing Platform Tools"
+$sdkmanager --sdk_root=android --install 'platform-tools'
+
+log "Installing bundletool"
+curl -L -o android/bundletool.jar \
+     https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
+
+# C Extensions
 log "Installing NDK"
 $sdkmanager --sdk_root=android --install 'ndk;26.3.11579264'
 
@@ -33,7 +42,3 @@ $sdkmanager --sdk_root=android --install 'build-tools;30.0.0'
 
 log "Installing Platform SDK"
 $sdkmanager --sdk_root=android --install 'platforms;android-34'
-
-log "Installing bundletool"
-curl -L -o android/bundletool.jar \
-     https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
