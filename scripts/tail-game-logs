@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+cd $(dirname $0)/..
+
+GAMEID=$(./scripts/get-metadata gameid)
+
+./android/platform-tools/adb logcat | grep $GAMEID
