@@ -31,3 +31,7 @@ $sdkmanager --sdk_root=android --install 'build-tools;30.0.0'
 
 log "Installing Platform SDK"
 $sdkmanager --sdk_root=android --install 'platforms;android-34'
+
+log "Installing bundletool"
+curl -L -o android/bundletool.jar \
+     https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
