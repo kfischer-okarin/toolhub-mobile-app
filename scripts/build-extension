@@ -10,7 +10,7 @@ determine_ndk_platform() {
   elif [ $(uname) = "Linux" ]; then
     echo "linux-x86_64"
   else
-    echo "unknown"
+    echo "Unsupported platform: $(uname)" >&2
     exit 1
   fi
 }
