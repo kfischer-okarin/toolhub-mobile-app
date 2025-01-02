@@ -4,6 +4,10 @@ set -e
 
 cd $(dirname $0)/..
 
-GAMEID=$(./scripts/get-metadata gameid)
+PACKAGEID=$(./scripts/get-metadata packageid)
 
-./android/platform-tools/adb logcat | grep $GAMEID
+adb=./android/platform-tools/adb
+
+game_pid=$($adb shell pidof -s $PACKAGEID)
+
+$adb logcat --pid=$game_pid
