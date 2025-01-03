@@ -23,6 +23,15 @@ static void print_last_jni_exception() {
   }
 }
 
+static void drb_log_writef(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  char buffer[1000];
+  vsnprintf(buffer, 1000, format, args);
+  drb->drb_log_write("Game", 2, buffer);
+  va_end(args);
+}
+
 // ----- JNI Reference Data Type -----
 
 static void jni_reference_free(mrb_state *mrb, void *ptr) {
