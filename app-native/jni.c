@@ -10,7 +10,7 @@ static JNIEnv *jni_env;
 struct references {
   struct RClass *jni;
   struct RClass *jni_class;
-  struct RClass *jni_reference;
+  struct RClass *jni_object;
 };
 
 static struct references refs;
@@ -101,9 +101,15 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
 
   refs.jni = drb->mrb_module_get(mrb, "JNI");
   refs.jni_class = drb->mrb_class_get_under(mrb, refs.jni, "JavaClass");
-
-  refs.jni_reference = drb->mrb_define_class_under(mrb, refs.jni, "Reference", mrb->object_class);
-  MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
+  MRB_SET_INSTANCE_TT(refs.jni_class, MRB_TT_DATA);
+  refs.jni_object = drb->mrb_class_get_under(mrb, refs.jni, "JavaObject");
+  MRB_SET_INSTANCE_TT(refs.jni_object, MRB_TT_DATA);
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class, MRB_ARGS_REQ(1));
+
+  jobject activity = (jobject) drb->drb_android_get_sdl_activity();
+  drb->mrb_iv_set(mrb,
+                  drb->mrb_obj_value(refs.jni),
+                  drb->mrb_intern_lit(mrb, "@game_activity"),
+                  wrap_jni_reference_in_object(mrb, activity, refs.jni_object));
 }

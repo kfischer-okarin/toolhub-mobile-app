@@ -2,11 +2,8 @@ require 'app/jni'
 
 def tick(args)
   if args.inputs.mouse.click
-    begin
-      p JNI.find_class('java/lang/String')
-      p JNI.find_class('java/lang/Stdddring')
-    rescue JNI::Class::NotFound => e
-      p [e.class, e.message]
-    end
+    p JNI.find_class('java/lang/String')
+    p JNI.game_activity
+    # p JNI.find_class('dev/kf_labo/toolhub/DragonRubyActivity')
   end
 end

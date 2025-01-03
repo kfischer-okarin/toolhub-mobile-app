@@ -1,4 +1,11 @@
 module JNI
+  class << self
+    attr_reader :game_activity
+  end
+
+  class JavaObject
+  end
+
   class JavaClass
     class NotFound < StandardError; end
 
