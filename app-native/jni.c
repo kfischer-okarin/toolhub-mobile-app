@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <dragonruby.h>
 #include <jni.h>
 
@@ -13,6 +14,15 @@ struct references {
 };
 
 static struct references refs;
+
+// ----- JNI Debugging Helpers -----
+
+static void print_last_jni_exception() {
+  if ((*jni_env)->ExceptionCheck(jni_env)) {
+    (*jni_env)->ExceptionDescribe(jni_env);
+    (*jni_env)->ExceptionClear(jni_env);
+  }
+}
 
 // ----- JNI Reference Data Type -----
 
@@ -33,16 +43,48 @@ static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference)
 
 // ----- JNI Reference Data Type END -----
 
-static mrb_value jni_find_class(mrb_state *mrb, mrb_value self)
-{
+static char *get_java_class_name(jclass class) {
+  jclass class_class = (*jni_env)->FindClass(jni_env, "java/lang/Class");
+  jmethodID get_name_method = (*jni_env)->GetMethodID(jni_env, class_class, "getName", "()Ljava/lang/String;");
+  jstring name = (jstring)(*jni_env)->CallObjectMethod(jni_env, class, get_name_method);
+  return (char *)(*jni_env)->GetStringUTFChars(jni_env, name, NULL);
+}
+
+static bool java_object_is_instance_of(jobject object, const char *class_name) {
+  jclass class = (*jni_env)->FindClass(jni_env, class_name);
+  return (*jni_env)->IsInstanceOf(jni_env, object, class);
+}
+
+static void handle_jni_exception(mrb_state *mrb) {
+  jthrowable exception = (*jni_env)->ExceptionOccurred(jni_env);
+  if (exception == NULL) {
+    return;
+  }
+  (*jni_env)->ExceptionClear(jni_env);
+
+  // get Message
+  jclass exception_class = (*jni_env)->GetObjectClass(jni_env, exception);
+  jmethodID get_message_method = (*jni_env)->GetMethodID(jni_env, exception_class, "getMessage", "()Ljava/lang/String;");
+  jstring message = (jstring)(*jni_env)->CallObjectMethod(jni_env, exception, get_message_method);
+  const char *message_str = (char *)(*jni_env)->GetStringUTFChars(jni_env, message, NULL);
+
+  if (java_object_is_instance_of(exception, "java/lang/ClassNotFoundException")) {
+    struct RClass *jni_class_not_found_exception = drb->mrb_class_get_under(mrb, refs.jni_class, "NotFound");
+    drb->mrb_raisef(mrb, jni_class_not_found_exception, "Class not found: %s", message_str);
+  }
+
+  drb->drb_log_write("Game", 2, "Unhandled JNI Exception:");
+  drb->drb_log_write("Game", 2, get_java_class_name(exception_class));
+  drb->drb_log_write("Game", 2, message_str);
+}
+
+static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
   const char *class_name;
   drb->mrb_get_args(mrb, "z", &class_name);
 
   jclass class = (*jni_env)->FindClass(jni_env, class_name);
-  if (class == NULL)
-  {
-    return drb->mrb_nil_value();
-  }
+
+  handle_jni_exception(mrb);
 
   mrb_value args[2];
   args[0] = drb->mrb_str_new_cstr(mrb, class_name);
