@@ -10,6 +10,7 @@ static JNIEnv *jni_env;
 struct references {
   struct RClass *jni;
   struct RClass *jni_reference;
+  struct RClass *jni_exception;
 };
 
 static struct references refs;
@@ -84,7 +85,7 @@ static void handle_jni_exception(mrb_state *mrb) {
   (*jni_env)->ExceptionClear(jni_env);
 
   const char *message = get_exception_message(exception);
-  struct RClass *exception_class = drb->mrb_class_get_under(mrb, refs.jni, "Exception");
+  struct RClass *exception_class = refs.jni_exception;
 
   if (java_object_is_instance_of(exception, "java/lang/ClassNotFoundException")) {
     exception_class = drb->mrb_class_get_under(mrb, refs.jni, "ClassNotFound");
@@ -155,6 +156,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
 
   refs.jni = drb->mrb_module_get(mrb, "JNI");
   refs.jni_reference = drb->mrb_class_get_under(mrb, refs.jni, "Reference");
+  refs.jni_exception = drb->mrb_class_get_under(mrb, refs.jni, "Exception");
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
