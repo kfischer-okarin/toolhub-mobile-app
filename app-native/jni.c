@@ -82,7 +82,7 @@ static void handle_jni_exception(mrb_state *mrb) {
   drb->drb_log_write("Game", 2, message);
 }
 
-static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
+static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   const char *class_name;
   drb->mrb_get_args(mrb, "z", &class_name);
 
@@ -105,7 +105,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   refs.jni_reference = drb->mrb_class_get_under(mrb, refs.jni, "Reference");
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
 
-  drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class, MRB_ARGS_REQ(1));
+  drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
 
   /* jobject activity = (jobject) drb->drb_android_get_sdl_activity(); */
   /* drb->mrb_iv_set(mrb, */
