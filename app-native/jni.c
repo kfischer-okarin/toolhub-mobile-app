@@ -11,8 +11,7 @@ static JNIEnv *jni_env;
 
 static struct RClass *jni_reference_class;
 
-static void jni_reference_free(mrb_state *mrb, void *ptr)
-{
+static void jni_reference_free(mrb_state *mrb, void *ptr) {
   (*jni_env)->DeleteGlobalRef(jni_env, ptr);
 }
 
@@ -21,8 +20,7 @@ static const mrb_data_type jni_reference_data_type = {
     jni_reference_free,
 };
 
-static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference)
-{
+static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference) {
   jobject global_reference = (*jni_env)->NewGlobalRef(jni_env, reference);
   struct RData *data = drb->mrb_data_object_alloc(mrb, jni_reference_class, global_reference, &jni_reference_data_type);
   return drb->mrb_obj_value(data);
@@ -52,8 +50,7 @@ static mrb_value jni_find_class(mrb_state *mrb, mrb_value self)
 }
 
 DRB_FFI_EXPORT
-void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_drb)
-{
+void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_drb) {
   drb = local_drb;
   drb->drb_log_write("Game", 2, "* INFO - Retrieving JNIEnv");
   jni_env = (JNIEnv *)drb->drb_android_get_jni_env();
