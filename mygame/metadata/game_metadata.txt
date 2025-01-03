@@ -6,3 +6,5 @@ gametitle=My Toolhub
 version=0.1
 icon=metadata/icon.png
 packageid=dev.kf_labo.toolhub
+
+orientation=portrait,landscape
