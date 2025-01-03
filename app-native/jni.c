@@ -100,7 +100,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   jni_env = (JNIEnv *)drb->drb_android_get_jni_env();
 
   refs.jni = drb->mrb_module_get(mrb, "JNI");
-  refs.jni_class = drb->mrb_class_get_under(mrb, refs.jni, "Class");
+  refs.jni_class = drb->mrb_class_get_under(mrb, refs.jni, "JavaClass");
 
   refs.jni_reference = drb->mrb_define_class_under(mrb, refs.jni, "Reference", mrb->object_class);
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);

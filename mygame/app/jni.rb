@@ -1,5 +1,5 @@
 module JNI
-  class Class
+  class JavaClass
     class NotFound < StandardError; end
 
     def initialize(name, jni_class_pointer)
@@ -8,7 +8,7 @@ module JNI
     end
 
     def to_s
-      "JNI::Class(#{@name})"
+      "JNI::JavaClass(#{@name})"
     end
 
     alias inspect to_s
