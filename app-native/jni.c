@@ -86,6 +86,13 @@ static void handle_jni_exception(mrb_state *mrb) {
   drb->mrb_raise(mrb, exception_class, message);
 }
 
+static const char *java_object_to_string(jobject object) {
+  jclass class = (*jni_env)->GetObjectClass(jni_env, object);
+  jmethodID to_string_method = (*jni_env)->GetMethodID(jni_env, class, "toString", "()Ljava/lang/String;");
+  jstring string = (jstring)(*jni_env)->CallObjectMethod(jni_env, object, to_string_method);
+  return (char *)(*jni_env)->GetStringUTFChars(jni_env, string, NULL);
+}
+
 static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   const char *class_name;
   drb->mrb_get_args(mrb, "z", &class_name);
@@ -93,11 +100,10 @@ static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   jclass class = (*jni_env)->FindClass(jni_env, class_name);
   handle_jni_exception(mrb);
 
-  mrb_value qualifier = drb->mrb_str_new_cstr(mrb, "L");
-  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, class_name);
-  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, ";");
-
-  return wrap_jni_reference_in_object(mrb, class, "jclass", qualifier);
+  return wrap_jni_reference_in_object(mrb,
+                                      class,
+                                      "jclass",
+                                      drb->mrb_str_new_cstr(mrb, java_object_to_string(class)));
 }
 
 static mrb_value jni_get_static_method_id_m(mrb_state *mrb, mrb_value self) {
@@ -111,7 +117,7 @@ static mrb_value jni_get_static_method_id_m(mrb_state *mrb, mrb_value self) {
   handle_jni_exception(mrb);
 
   mrb_value qualifier = drb->mrb_iv_get(mrb, class_reference, drb->mrb_intern_lit(mrb, "@qualifier"));
-  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, ".");
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, " ");
   qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_name);
   qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_signature);
 
