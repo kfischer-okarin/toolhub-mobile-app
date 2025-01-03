@@ -160,8 +160,8 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
-  drb->mrb_define_class_method(mrb, refs.jni, "get_static_method_id", jni_get_static_method_id_m, MRB_ARGS_REQ(3));
   drb->mrb_define_class_method(mrb, refs.jni, "get_object_class", jni_get_object_class_m, MRB_ARGS_REQ(1));
+  drb->mrb_define_class_method(mrb, refs.jni, "get_static_method_id", jni_get_static_method_id_m, MRB_ARGS_REQ(3));
 
   jobject activity = (jobject) drb->drb_android_get_sdl_activity();
   drb->mrb_iv_set(mrb,
