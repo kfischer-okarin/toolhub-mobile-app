@@ -122,6 +122,8 @@ static const char *java_object_to_string(jobject object) {
   return (char *)(*jni_env)->GetStringUTFChars(jni_env, string, NULL);
 }
 
+// ----- JNI Methods -----
+
 static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   const char *class_name;
   drb->mrb_get_args(mrb, "z", &class_name);
@@ -167,6 +169,59 @@ static mrb_value jni_get_object_class_m(mrb_state *mrb, mrb_value self) {
                                       drb->mrb_str_new_cstr(mrb, java_object_to_string(class)));
 }
 
+static jvalue *convert_mrb_args_to_jni_args(mrb_state *mrb, mrb_value *args, mrb_int argc) {
+  jvalue *jni_args = drb->mrb_malloc(mrb, sizeof(jvalue) * argc);
+  for (int i = 0; i < argc; i++) {
+    if (mrb_integer_p(args[i])) {
+      jni_args[i].i = mrb_integer(args[i]);
+    } else {
+      drb->mrb_raise(mrb, refs.jni_exception, "Only Fixnum arguments are supported");
+    }
+  }
+  return jni_args;
+}
+
+#define CALL_STATIC_METHOD_BEGINNING()\
+  mrb_value class_reference;\
+  mrb_value method_id_reference;\
+  mrb_value *args;\
+  mrb_int argc;\
+  drb->mrb_get_args(mrb, "oo*", &class_reference, &method_id_reference, &args, &argc);\
+  \
+  jclass class = drb->mrb_data_check_get_ptr(mrb, class_reference, &jni_reference_data_type);\
+  jmethodID method_id = (jmethodID)unwrap_jni_pointer_from_object(mrb, method_id_reference);\
+  \
+  jvalue *jni_args = convert_mrb_args_to_jni_args(mrb, args, argc);
+
+#define CALL_STATIC_METHOD_CLEANUP()\
+  drb->mrb_free(mrb, jni_args);\
+  handle_jni_exception(mrb);
+
+static mrb_value jni_call_static_boolean_method_m(mrb_state *mrb, mrb_value self) {
+  CALL_STATIC_METHOD_BEGINNING();
+
+  jboolean jni_result = (*jni_env)->CallStaticBooleanMethodA(jni_env, class, method_id, jni_args);
+
+  CALL_STATIC_METHOD_CLEANUP();
+
+  return mrb_bool_value(jni_result);
+}
+
+static mrb_value jni_call_static_object_method_m(mrb_state *mrb, mrb_value self) {
+  CALL_STATIC_METHOD_BEGINNING();
+
+  jobject jni_result = (*jni_env)->CallStaticObjectMethodA(jni_env, class, method_id, jni_args);
+
+  CALL_STATIC_METHOD_CLEANUP();
+
+  return wrap_jni_reference_in_object(mrb,
+                                      jni_result,
+                                      "jobject",
+                                      drb->mrb_str_new_cstr(mrb, java_object_to_string(jni_result)));
+}
+
+// ----- JNI Methods END -----
+
 DRB_FFI_EXPORT
 void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_drb) {
   drb = local_drb;
@@ -182,6 +237,16 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
   drb->mrb_define_class_method(mrb, refs.jni, "get_object_class", jni_get_object_class_m, MRB_ARGS_REQ(1));
   drb->mrb_define_class_method(mrb, refs.jni, "get_static_method_id", jni_get_static_method_id_m, MRB_ARGS_REQ(3));
+  drb->mrb_define_class_method(mrb,
+                               refs.jni,
+                               "call_static_boolean_method",
+                               jni_call_static_boolean_method_m,
+                               MRB_ARGS_REQ(2) | MRB_ARGS_REST());
+  drb->mrb_define_class_method(mrb,
+                               refs.jni,
+                               "call_static_object_method",
+                               jni_call_static_object_method_m,
+                               MRB_ARGS_REQ(2) | MRB_ARGS_REST());
 
   jobject activity = (jobject) drb->drb_android_get_sdl_activity();
   drb->mrb_iv_set(mrb,
