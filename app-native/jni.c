@@ -78,19 +78,35 @@ static void handle_jni_exception(mrb_state *mrb) {
   drb->drb_log_write("Game", 2, message_str);
 }
 
+static mrb_value wrap_java_class(mrb_state *mrb, jclass class) {
+  mrb_value result = wrap_jni_reference_in_object(mrb, class, refs.jni_class);
+
+  mrb_value name = drb->mrb_str_new_cstr(mrb, get_java_class_name(class));
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@name"), name);
+
+  return result;
+}
+
+static mrb_value wrap_java_object(mrb_state *mrb, jobject object) {
+  mrb_value result = wrap_jni_reference_in_object(mrb, object, refs.jni_object);
+
+  jclass object_class = (*jni_env)->GetObjectClass(jni_env, object);
+  drb->mrb_iv_set(mrb,
+                  result,
+                  drb->mrb_intern_lit(mrb, "@java_class"),
+                  wrap_java_class(mrb, object_class));
+
+  return result;
+}
+
 static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
   const char *class_name;
   drb->mrb_get_args(mrb, "z", &class_name);
 
   jclass class = (*jni_env)->FindClass(jni_env, class_name);
-
   handle_jni_exception(mrb);
 
-  mrb_value args[2];
-  args[0] = drb->mrb_str_new_cstr(mrb, class_name);
-  args[1] = wrap_jni_reference_in_object(mrb, class, refs.jni_class);
-
-  return drb->mrb_obj_new(mrb, refs.jni_class, 2, args);
+  return wrap_java_class(mrb, class);
 }
 
 DRB_FFI_EXPORT
@@ -111,5 +127,5 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   drb->mrb_iv_set(mrb,
                   drb->mrb_obj_value(refs.jni),
                   drb->mrb_intern_lit(mrb, "@game_activity"),
-                  wrap_jni_reference_in_object(mrb, activity, refs.jni_object));
+                  wrap_java_object(mrb, activity));
 }
