@@ -79,6 +79,8 @@ static void handle_jni_exception(mrb_state *mrb) {
 
   if (java_object_is_instance_of(exception, "java/lang/ClassNotFoundException")) {
     exception_class = drb->mrb_class_get_under(mrb, refs.jni, "ClassNotFound");
+  } else if (java_object_is_instance_of(exception, "java/lang/NoSuchMethodError")) {
+    exception_class = drb->mrb_class_get_under(mrb, refs.jni, "NoSuchMethod");
   }
 
   drb->mrb_raise(mrb, exception_class, message);
@@ -98,6 +100,24 @@ static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   return wrap_jni_reference_in_object(mrb, class, "jclass", qualifier);
 }
 
+static mrb_value jni_get_static_method_id_m(mrb_state *mrb, mrb_value self) {
+  mrb_value class_reference;
+  const char *method_name;
+  const char *method_signature;
+  drb->mrb_get_args(mrb, "ozz", &class_reference, &method_name, &method_signature);
+
+  jclass class = drb->mrb_data_check_get_ptr(mrb, class_reference, &jni_reference_data_type);
+  jmethodID method_id = (*jni_env)->GetStaticMethodID(jni_env, class, method_name, method_signature);
+  handle_jni_exception(mrb);
+
+  mrb_value qualifier = drb->mrb_iv_get(mrb, class_reference, drb->mrb_intern_lit(mrb, "@qualifier"));
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, ".");
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_name);
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_signature);
+
+  return wrap_jni_reference_in_object(mrb, method_id, "jmethodID", qualifier);
+}
+
 DRB_FFI_EXPORT
 void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_drb) {
   drb = local_drb;
@@ -109,6 +129,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
+  drb->mrb_define_class_method(mrb, refs.jni, "get_static_method_id", jni_get_static_method_id_m, MRB_ARGS_REQ(3));
 
   /* jobject activity = (jobject) drb->drb_android_get_sdl_activity(); */
   /* drb->mrb_iv_set(mrb, */
