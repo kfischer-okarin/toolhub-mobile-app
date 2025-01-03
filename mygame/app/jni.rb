@@ -1,11 +1,12 @@
 module JNI
   class << self
     # Set via C extension
-    attr_reader :game_activity
+    attr_reader :game_activity_reference
 
     # Defined in jni.c
     # def find_class(name) -> Reference
     # def get_static_method_id(class_reference, name, signature)
+    # def get_object_class(object_reference) -> Reference
   end
 
   class Exception < StandardError; end

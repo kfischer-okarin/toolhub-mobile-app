@@ -124,6 +124,20 @@ static mrb_value jni_get_static_method_id_m(mrb_state *mrb, mrb_value self) {
   return wrap_jni_reference_in_object(mrb, method_id, "jmethodID", qualifier);
 }
 
+static mrb_value jni_get_object_class_m(mrb_state *mrb, mrb_value self) {
+  mrb_value object_reference;
+  drb->mrb_get_args(mrb, "o", &object_reference);
+
+  jobject object = drb->mrb_data_check_get_ptr(mrb, object_reference, &jni_reference_data_type);
+  jclass class = (*jni_env)->GetObjectClass(jni_env, object);
+  handle_jni_exception(mrb);
+
+  return wrap_jni_reference_in_object(mrb,
+                                      class,
+                                      "jclass",
+                                      drb->mrb_str_new_cstr(mrb, java_object_to_string(class)));
+}
+
 DRB_FFI_EXPORT
 void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_drb) {
   drb = local_drb;
@@ -136,10 +150,14 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class_m, MRB_ARGS_REQ(1));
   drb->mrb_define_class_method(mrb, refs.jni, "get_static_method_id", jni_get_static_method_id_m, MRB_ARGS_REQ(3));
+  drb->mrb_define_class_method(mrb, refs.jni, "get_object_class", jni_get_object_class_m, MRB_ARGS_REQ(1));
 
-  /* jobject activity = (jobject) drb->drb_android_get_sdl_activity(); */
-  /* drb->mrb_iv_set(mrb, */
-                  /* drb->mrb_obj_value(refs.jni), */
-                  /* drb->mrb_intern_lit(mrb, "@game_activity"), */
-                  /* wrap_java_object(mrb, activity)); */
+  jobject activity = (jobject) drb->drb_android_get_sdl_activity();
+  drb->mrb_iv_set(mrb,
+                  drb->mrb_obj_value(refs.jni),
+                  drb->mrb_intern_lit(mrb, "@game_activity_reference"),
+                  wrap_jni_reference_in_object(mrb,
+                                               activity,
+                                               "jobject",
+                                               drb->mrb_str_new_cstr(mrb, java_object_to_string(activity))));
 }
