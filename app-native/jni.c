@@ -9,8 +9,7 @@ static JNIEnv *jni_env;
 
 struct references {
   struct RClass *jni;
-  struct RClass *jni_class;
-  struct RClass *jni_object;
+  struct RClass *jni_reference;
 };
 
 static struct references refs;
@@ -35,10 +34,12 @@ static const mrb_data_type jni_reference_data_type = {
     jni_reference_free,
 };
 
-static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference, struct RClass *klass) {
+static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference, mrb_value description) {
   jobject global_reference = (*jni_env)->NewGlobalRef(jni_env, reference);
-  struct RData *data = drb->mrb_data_object_alloc(mrb, klass, global_reference, &jni_reference_data_type);
-  return drb->mrb_obj_value(data);
+  struct RData *data = drb->mrb_data_object_alloc(mrb, refs.jni_reference, global_reference, &jni_reference_data_type);
+  mrb_value result = drb->mrb_obj_value(data);
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@description"), description);
+  return result;
 }
 
 // ----- JNI Reference Data Type END -----
@@ -55,6 +56,13 @@ static bool java_object_is_instance_of(jobject object, const char *class_name) {
   return (*jni_env)->IsInstanceOf(jni_env, object, class);
 }
 
+static const char *get_exception_message(jthrowable exception) {
+  jclass exception_class = (*jni_env)->GetObjectClass(jni_env, exception);
+  jmethodID get_message_method = (*jni_env)->GetMethodID(jni_env, exception_class, "getMessage", "()Ljava/lang/String;");
+  jstring message = (jstring)(*jni_env)->CallObjectMethod(jni_env, exception, get_message_method);
+  return (char *)(*jni_env)->GetStringUTFChars(jni_env, message, NULL);
+}
+
 static void handle_jni_exception(mrb_state *mrb) {
   jthrowable exception = (*jni_env)->ExceptionOccurred(jni_env);
   if (exception == NULL) {
@@ -62,41 +70,16 @@ static void handle_jni_exception(mrb_state *mrb) {
   }
   (*jni_env)->ExceptionClear(jni_env);
 
-  // get Message
-  jclass exception_class = (*jni_env)->GetObjectClass(jni_env, exception);
-  jmethodID get_message_method = (*jni_env)->GetMethodID(jni_env, exception_class, "getMessage", "()Ljava/lang/String;");
-  jstring message = (jstring)(*jni_env)->CallObjectMethod(jni_env, exception, get_message_method);
-  const char *message_str = (char *)(*jni_env)->GetStringUTFChars(jni_env, message, NULL);
+  const char *message = get_exception_message(exception);
 
   if (java_object_is_instance_of(exception, "java/lang/ClassNotFoundException")) {
-    struct RClass *jni_class_not_found_exception = drb->mrb_class_get_under(mrb, refs.jni_class, "NotFound");
-    drb->mrb_raisef(mrb, jni_class_not_found_exception, "Class not found: %s", message_str);
+    struct RClass *jni_class_not_found_exception = drb->mrb_class_get_under(mrb, refs.jni, "ClassNotFound");
+    drb->mrb_raise(mrb, jni_class_not_found_exception, message);
   }
 
   drb->drb_log_write("Game", 2, "Unhandled JNI Exception:");
-  drb->drb_log_write("Game", 2, get_java_class_name(exception_class));
-  drb->drb_log_write("Game", 2, message_str);
-}
-
-static mrb_value wrap_java_class(mrb_state *mrb, jclass class) {
-  mrb_value result = wrap_jni_reference_in_object(mrb, class, refs.jni_class);
-
-  mrb_value name = drb->mrb_str_new_cstr(mrb, get_java_class_name(class));
-  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@name"), name);
-
-  return result;
-}
-
-static mrb_value wrap_java_object(mrb_state *mrb, jobject object) {
-  mrb_value result = wrap_jni_reference_in_object(mrb, object, refs.jni_object);
-
-  jclass object_class = (*jni_env)->GetObjectClass(jni_env, object);
-  drb->mrb_iv_set(mrb,
-                  result,
-                  drb->mrb_intern_lit(mrb, "@java_class"),
-                  wrap_java_class(mrb, object_class));
-
-  return result;
+  drb->drb_log_write("Game", 2, get_java_class_name((*jni_env)->GetObjectClass(jni_env, exception)));
+  drb->drb_log_write("Game", 2, message);
 }
 
 static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
@@ -106,7 +89,10 @@ static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
   jclass class = (*jni_env)->FindClass(jni_env, class_name);
   handle_jni_exception(mrb);
 
-  return wrap_java_class(mrb, class);
+  mrb_value description = drb->mrb_str_new_cstr(mrb, "jclass ");
+  description = drb->mrb_str_cat_cstr(mrb, description, class_name);
+
+  return wrap_jni_reference_in_object(mrb, class, description);
 }
 
 DRB_FFI_EXPORT
@@ -116,16 +102,14 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   jni_env = (JNIEnv *)drb->drb_android_get_jni_env();
 
   refs.jni = drb->mrb_module_get(mrb, "JNI");
-  refs.jni_class = drb->mrb_class_get_under(mrb, refs.jni, "JavaClass");
-  MRB_SET_INSTANCE_TT(refs.jni_class, MRB_TT_DATA);
-  refs.jni_object = drb->mrb_class_get_under(mrb, refs.jni, "JavaObject");
-  MRB_SET_INSTANCE_TT(refs.jni_object, MRB_TT_DATA);
+  refs.jni_reference = drb->mrb_class_get_under(mrb, refs.jni, "Reference");
+  MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
 
   drb->mrb_define_class_method(mrb, refs.jni, "find_class", jni_find_class, MRB_ARGS_REQ(1));
 
-  jobject activity = (jobject) drb->drb_android_get_sdl_activity();
-  drb->mrb_iv_set(mrb,
-                  drb->mrb_obj_value(refs.jni),
-                  drb->mrb_intern_lit(mrb, "@game_activity"),
-                  wrap_java_object(mrb, activity));
+  /* jobject activity = (jobject) drb->drb_android_get_sdl_activity(); */
+  /* drb->mrb_iv_set(mrb, */
+                  /* drb->mrb_obj_value(refs.jni), */
+                  /* drb->mrb_intern_lit(mrb, "@game_activity"), */
+                  /* wrap_java_object(mrb, activity)); */
 }

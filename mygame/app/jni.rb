@@ -2,25 +2,16 @@ module JNI
   class << self
     # Set via C extension
     attr_reader :game_activity
+
+    # Defined in jni.c
+    # def find_class(name)
   end
 
-  class JavaObject
-    # Set via C extension
-    attr_reader :java_class
+  class ClassNotFound < StandardError; end
 
+  class Reference
     def inspect
-      "#<JavaObject java_class=#{java_class.inspect}>"
-    end
-  end
-
-  class JavaClass
-    class NotFound < StandardError; end
-
-    # Set via C extension
-    attr_reader :name
-
-    def inspect
-      "#<JavaClass name=#{name.inspect}>"
+      "#<JNI::Reference '#{@description}'>"
     end
   end
 end
