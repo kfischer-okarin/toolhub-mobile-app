@@ -7,7 +7,8 @@ module JNI
     # def find_class(name)
   end
 
-  class ClassNotFound < StandardError; end
+  class Exception < StandardError; end
+  class ClassNotFound < Exception; end
 
   class Reference
     def inspect

@@ -71,15 +71,13 @@ static void handle_jni_exception(mrb_state *mrb) {
   (*jni_env)->ExceptionClear(jni_env);
 
   const char *message = get_exception_message(exception);
+  struct RClass *exception_class = drb->mrb_class_get_under(mrb, refs.jni, "Exception");
 
   if (java_object_is_instance_of(exception, "java/lang/ClassNotFoundException")) {
-    struct RClass *jni_class_not_found_exception = drb->mrb_class_get_under(mrb, refs.jni, "ClassNotFound");
-    drb->mrb_raise(mrb, jni_class_not_found_exception, message);
+    exception_class = drb->mrb_class_get_under(mrb, refs.jni, "ClassNotFound");
   }
 
-  drb->drb_log_write("Game", 2, "Unhandled JNI Exception:");
-  drb->drb_log_write("Game", 2, get_java_class_name((*jni_env)->GetObjectClass(jni_env, exception)));
-  drb->drb_log_write("Game", 2, message);
+  drb->mrb_raise(mrb, exception_class, message);
 }
 
 static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
