@@ -12,7 +12,7 @@ module JNI
 
   class Reference
     def inspect
-      "#<JNI::Reference '#{@description}'>"
+      "#<JNI::Reference #{@type_name} #{@qualifier}>"
     end
   end
 end

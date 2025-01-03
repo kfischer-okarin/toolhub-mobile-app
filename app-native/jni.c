@@ -34,11 +34,15 @@ static const mrb_data_type jni_reference_data_type = {
     jni_reference_free,
 };
 
-static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference, mrb_value description) {
+static mrb_value wrap_jni_reference_in_object(mrb_state *mrb,
+                                              jobject reference,
+                                              const char *type_name,
+                                              mrb_value qualifier) {
   jobject global_reference = (*jni_env)->NewGlobalRef(jni_env, reference);
   struct RData *data = drb->mrb_data_object_alloc(mrb, refs.jni_reference, global_reference, &jni_reference_data_type);
   mrb_value result = drb->mrb_obj_value(data);
-  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@description"), description);
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@type_name"), drb->mrb_str_new_cstr(mrb, type_name));
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@qualifier"), qualifier);
   return result;
 }
 
@@ -87,10 +91,11 @@ static mrb_value jni_find_class_m(mrb_state *mrb, mrb_value self) {
   jclass class = (*jni_env)->FindClass(jni_env, class_name);
   handle_jni_exception(mrb);
 
-  mrb_value description = drb->mrb_str_new_cstr(mrb, "jclass ");
-  description = drb->mrb_str_cat_cstr(mrb, description, class_name);
+  mrb_value qualifier = drb->mrb_str_new_cstr(mrb, "L");
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, class_name);
+  qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, ";");
 
-  return wrap_jni_reference_in_object(mrb, class, description);
+  return wrap_jni_reference_in_object(mrb, class, "jclass", qualifier);
 }
 
 DRB_FFI_EXPORT
