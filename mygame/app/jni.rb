@@ -20,6 +20,14 @@ module JNI
       "#<JNI::Reference #{@type_name} #{@qualifier}>"
     end
   end
+
+  class Pointer
+    attr_reader :type_name, :qualifier
+
+    def inspect
+      "#<JNI::Pointer #{@type_name} #{@qualifier}>"
+    end
+  end
 end
 
 GTK.dlopen('jni')

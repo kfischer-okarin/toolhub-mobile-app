@@ -10,6 +10,7 @@ static JNIEnv *jni_env;
 struct references {
   struct RClass *jni;
   struct RClass *jni_reference;
+  struct RClass *jni_pointer;
   struct RClass *jni_exception;
 };
 
@@ -57,6 +58,24 @@ static mrb_value wrap_jni_reference_in_object(mrb_state *mrb,
 }
 
 // ----- JNI Reference Data Type END -----
+
+// ----- JNI Pointer Data Type -----
+
+static mrb_value wrap_jni_pointer_in_object(mrb_state *mrb, void *pointer, const char *type_name, mrb_value qualifier) {
+  mrb_value pointer_value = drb->mrb_word_boxing_cptr_value(mrb, pointer);
+  mrb_value result = drb->mrb_obj_new(mrb, refs.jni_pointer, 0, NULL);
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@pointer"), pointer_value);
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@type_name"), drb->mrb_str_new_cstr(mrb, type_name));
+  drb->mrb_iv_set(mrb, result, drb->mrb_intern_lit(mrb, "@qualifier"), qualifier);
+  return result;
+}
+
+static void *unwrap_jni_pointer_from_object(mrb_state *mrb, mrb_value object) {
+  mrb_value pointer_value = drb->mrb_iv_get(mrb, object, drb->mrb_intern_lit(mrb, "@pointer"));
+  return mrb_cptr(pointer_value);
+}
+
+// ----- JNI Pointer Data Type END -----
 
 static char *get_java_class_name(jclass class) {
   jclass class_class = (*jni_env)->FindClass(jni_env, "java/lang/Class");
@@ -131,7 +150,7 @@ static mrb_value jni_get_static_method_id_m(mrb_state *mrb, mrb_value self) {
   qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_name);
   qualifier = drb->mrb_str_cat_cstr(mrb, qualifier, method_signature);
 
-  return wrap_jni_reference_in_object(mrb, method_id, "jmethodID", qualifier);
+  return wrap_jni_pointer_in_object(mrb, method_id, "jmethodID", qualifier);
 }
 
 static mrb_value jni_get_object_class_m(mrb_state *mrb, mrb_value self) {
@@ -155,6 +174,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   jni_env = (JNIEnv *)drb->drb_android_get_jni_env();
 
   refs.jni = drb->mrb_module_get(mrb, "JNI");
+  refs.jni_pointer = drb->mrb_class_get_under(mrb, refs.jni, "Pointer");
   refs.jni_reference = drb->mrb_class_get_under(mrb, refs.jni, "Reference");
   refs.jni_exception = drb->mrb_class_get_under(mrb, refs.jni, "Exception");
   MRB_SET_INSTANCE_TT(refs.jni_reference, MRB_TT_DATA);
