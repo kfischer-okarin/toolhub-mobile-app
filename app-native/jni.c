@@ -35,9 +35,9 @@ static const mrb_data_type jni_reference_data_type = {
     jni_reference_free,
 };
 
-static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference) {
+static mrb_value wrap_jni_reference_in_object(mrb_state *mrb, jobject reference, struct RClass *klass) {
   jobject global_reference = (*jni_env)->NewGlobalRef(jni_env, reference);
-  struct RData *data = drb->mrb_data_object_alloc(mrb, refs.jni_reference, global_reference, &jni_reference_data_type);
+  struct RData *data = drb->mrb_data_object_alloc(mrb, klass, global_reference, &jni_reference_data_type);
   return drb->mrb_obj_value(data);
 }
 
@@ -88,7 +88,7 @@ static mrb_value jni_find_class(mrb_state *mrb, mrb_value self) {
 
   mrb_value args[2];
   args[0] = drb->mrb_str_new_cstr(mrb, class_name);
-  args[1] = wrap_jni_reference_in_object(mrb, class);
+  args[1] = wrap_jni_reference_in_object(mrb, class, refs.jni_class);
 
   return drb->mrb_obj_new(mrb, refs.jni_class, 2, args);
 }
