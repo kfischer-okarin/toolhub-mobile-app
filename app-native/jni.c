@@ -228,7 +228,7 @@ void drb_register_c_extensions_with_api(mrb_state *mrb, struct drb_api_t *local_
   drb->drb_log_write("Game", 2, "* INFO - Retrieving JNIEnv");
   jni_env = (JNIEnv *)drb->drb_android_get_jni_env();
 
-  refs.jni = drb->mrb_module_get(mrb, "JNI");
+  refs.jni = drb->mrb_module_get_under(mrb, drb->mrb_module_get(mrb, "JNI"), "FFI");
   refs.jni_pointer = drb->mrb_class_get_under(mrb, refs.jni, "Pointer");
   refs.jni_reference = drb->mrb_class_get_under(mrb, refs.jni, "Reference");
   refs.jni_exception = drb->mrb_class_get_under(mrb, refs.jni, "Exception");
