@@ -12,11 +12,8 @@ def tick(args)
   if args.inputs.mouse.click
     p JNI.game_activity
     activity_class = JNI.game_activity.java_class
-    p activity_class
-    # method_id = JNI.get_static_method_id(activity_class, 'showTextInput', '(IIII)Z')
-    # p method_id
-    # result = JNI.call_static_boolean_method(activity_class, method_id, 100, 200, 300, 400)
-    # p result
+    activity_class.register_static_method(:show_text_input, argument_types: %i[int int int int], return_type: :boolean)
+    activity_class.show_text_input(100, 100, 300, 100)
   end
 
   center_x = 360
@@ -27,10 +24,4 @@ def tick(args)
     anchor_x: 0.5
   }
   args.outputs.primitives << args.state.input
-  # args.outputs.labels << {
-    # x: center_x,
-    # y: 720 - 64,
-    # text: "Last Input: #{args.inputs.keyboard.key_held.d}",
-    # anchor_x: 0.5
-  # }
 end
