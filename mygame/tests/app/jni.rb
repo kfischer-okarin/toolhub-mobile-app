@@ -8,11 +8,13 @@ module JNI
           always_returning({ qualifier: 'class com.example.MyObject' })
         }
       }
-      object = JavaObject.new(a_mock, ffi: ffi)
+      object_reference = Object.new
+      object = JavaObject.new(object_reference, ffi: ffi)
 
       result = object.java_class
 
       assert.equal! result.name, 'com.example.MyObject'
+      assert.received_call! ffi, :get_object_class, [object_reference]
     end
   end
 end
