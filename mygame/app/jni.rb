@@ -10,12 +10,13 @@ module JNI
   class JavaObject
     attr_reader :reference
 
-    def initialize(reference)
+    def initialize(reference, ffi: FFI)
       @reference = reference
+      @ffi = ffi
     end
 
     def java_class
-      @java_class ||= JavaClass.new(FFI.get_object_class(reference))
+      @java_class ||= JavaClass.new(@ffi.get_object_class(reference), ffi: @ffi)
     end
 
     def inspect
@@ -26,8 +27,9 @@ module JNI
   class JavaClass
     attr_reader :reference
 
-    def initialize(reference)
+    def initialize(reference, ffi: FFI)
       @reference = reference
+      @ffi = ffi
     end
 
     def name
