@@ -31,7 +31,7 @@ jobs:
           fi
       - name: Build Extension
         run: |
-          ./scripts/build-extension
+          ./scripts/build-extension jni
           mkdir -p dist
           mv mygame/native dist/
       - uses: actions/upload-artifact@v4
